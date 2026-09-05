@@ -1,5 +1,6 @@
 package com.example.checklist.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,12 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
@@ -33,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,8 +51,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
+import nl.dionsegijn.konfetti.compose.KonfettiView
+import nl.dionsegijn.konfetti.core.Party
+import nl.dionsegijn.konfetti.core.Position
+import nl.dionsegijn.konfetti.core.emitter.Emitter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChecklistScreen(
     viewModel: ChecklistViewModel,
@@ -57,8 +69,27 @@ fun ChecklistScreen(
     var editingTask by remember { mutableStateOf<TaskUi?>(null) }
     var deletingTask by remember { mutableStateOf<TaskUi?>(null) }
 
+    // Konfetti: se dispara UNA vez al llegar al 100% del día (progress == 1f).
+    // El flag evita re-disparos en recomposición; se resetea si baja del 100%.
+    // konfetti-compose 2.0.5 construye los PartySystems con las parties de la primera
+    // composición, así que el overlay se compone solo al dispararse (if showConfetti).
+    var showConfetti by remember { mutableStateOf(false) }
+    var confettiFired by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.progress) {
+        if (uiState.progress == 1f && !confettiFired) {
+            showConfetti = true
+            confettiFired = true
+            // Auto-oculta el overlay tras la duración del emisor (5000 ms).
+            delay(5000)
+            showConfetti = false
+        } else if (uiState.progress < 1f) {
+            showConfetti = false
+            confettiFired = false
+        }
+    }
+
+    Box(modifier = modifier) {
     Scaffold(
-        modifier = modifier,
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Filled.Add, contentDescription = "Agregar tarea")
@@ -103,11 +134,33 @@ fun ChecklistScreen(
                             task = task,
                             onToggle = { viewModel.toggleTask(task.id) },
                             onEdit = { editingTask = task },
-                            onDelete = { deletingTask = task }
+                            onDelete = { deletingTask = task },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
             }
+        }
+    }
+
+        if (showConfetti) {
+            KonfettiView(
+                modifier = Modifier.fillMaxSize(),
+                parties = listOf(
+                    Party(
+                        speed = 30f,
+                        maxSpeed = 50f,
+                        damping = 0.9f,
+                        spread = 360,
+                        colors = listOf(
+                            0xFF2E7D32.toInt(), 0xFF00796B.toInt(), 0xFFEF6C00.toInt(),
+                            0xFF81C995.toInt(), 0xFF4DB6AC.toInt(), 0xFFFFD54F.toInt()
+                        ),
+                        position = Position.Relative(0.5, 0.3),
+                        emitter = Emitter(duration = 5000, TimeUnit.MILLISECONDS).max(200)
+                    )
+                )
+            )
         }
     }
 
@@ -157,8 +210,15 @@ private fun StreakChip(streak: Int) {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                Icons.Filled.LocalFireDepartment,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(Modifier.width(4.dp))
             Text(
-                "🔥 $streak",
+                "$streak",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
@@ -178,11 +238,13 @@ private fun DayProgressCard(uiState: ChecklistUiState) {
     val message = when {
         uiState.progress <= 0f -> "Empieza el día"
         uiState.progress < 1f -> "¡Sigue así!"
-        else -> "¡Todo listo! 🎉"
+        else -> "¡Todo listo!"
     }
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.primaryContainer
     ) {
@@ -207,11 +269,27 @@ private fun DayProgressCard(uiState: ChecklistUiState) {
                 )
             }
             Spacer(Modifier.height(16.dp))
-            Text(
-                message,
-                style = MaterialTheme.typography.titleLarge,
-                color = contentColor
-            )
+            if (uiState.progress == 1f) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Celebration,
+                        contentDescription = null,
+                        tint = contentColor
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = contentColor
+                    )
+                }
+            } else {
+                Text(
+                    message,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = contentColor
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 "${uiState.completedTasks}/${uiState.totalTasks} completadas",
@@ -229,8 +307,9 @@ private fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // ponytail: lottie asset no disponible, icono estático
         Icon(
-            Icons.AutoMirrored.Filled.List,
+            Icons.Filled.CheckCircle,
             contentDescription = null,
             modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -251,12 +330,29 @@ private fun TaskRow(
     task: TaskUi,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val titleColor by animateColorAsState(
+        targetValue = if (task.completedToday) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        label = "taskTitleColor"
+    )
+    val cardColor by animateColorAsState(
+        targetValue = if (task.completedToday) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        label = "taskCardColor"
+    )
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer
+        color = cardColor
     ) {
         Row(
             modifier = Modifier
@@ -274,11 +370,7 @@ private fun TaskRow(
                 task.title,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (task.completedToday) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = titleColor,
                 textDecoration = if (task.completedToday) {
                     TextDecoration.LineThrough
                 } else {
