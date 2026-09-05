@@ -7,7 +7,8 @@
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 
-# Release signing keystores (never commit)
+# Release signing
 *.jks
+*.keystore
+*.p12
