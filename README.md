@@ -75,4 +75,8 @@ app/src/test/java/com/example/checklist/data/
 - **Tasa de cumplimiento**: se calcula sobre los días con registro de esa tarea, no sobre días transcurridos.
 - **Borrado**: eliminar una tarea es permanente; sus `daily_completions` se borran con CASCADE.
 - **Reset diario**: el "hoy" se deriva de la fecha local (`LocalDate.now()`), sin cron ni borrado; se recalcula al abrir la app.
-- **java.home**: `gradle.properties` apunta `org.gradle.java.home` al JBR de Android Studio (ruta local de la máquina de desarrollo; ajustarla si se compila en otra máquina).
+- **JDK local (configuración previa)**: para ejecutar Gradle en local es necesario crear `local.properties` (NO versionado, en `.gitignore`) con la ruta del JDK de tu máquina, por ejemplo:
+  ```properties
+  org.gradle.java.home=C\:\\Program Files\\Android\\Android Studio\\jbr
+  ```
+  Ajusta la ruta según tu instalación de JDK. En CI se usa el JDK 17 configurado por los workflows, así que no hace falta en el runner.
