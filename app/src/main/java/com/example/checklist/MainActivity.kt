@@ -30,15 +30,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.checklist.data.AppDatabase
 import com.example.checklist.data.ChecklistRepository
 import com.example.checklist.ui.ChecklistScreen
 import com.example.checklist.ui.ChecklistViewModel
 import com.example.checklist.ui.StatsScreen
+import com.example.checklist.ui.widget.TaskListWidget
+import kotlinx.coroutines.launch
 
 // Paleta propia verde/teal de hábitos. Sin dynamic color: mismo tema en todos los dispositivos.
 private val LightColors = lightColorScheme(
@@ -128,7 +132,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val db = AppDatabase.getInstance(this)
-        val repo = ChecklistRepository(db.taskDao())
+        val repo = ChecklistRepository(db.taskDao()) {
+            lifecycleScope.launch { TaskListWidget.updateAll(applicationContext) }
+        }
         enableEdgeToEdge()
         setContent {
             ChecklistApp(repo)

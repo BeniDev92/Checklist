@@ -7,33 +7,38 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-class ChecklistRepository(private val dao: TaskDao) {
-
+class ChecklistRepository(
+    private val dao: TaskDao,
+    private val onDataChanged: () -> Unit = {}
+) {
     fun observeActiveTasks(): Flow<List<Task>> = dao.observeActiveTasks()
 
     fun observeAllCompletions(): Flow<List<DailyCompletion>> = dao.observeAllCompletions()
 
     suspend fun addTask(title: String): Long {
         val position = dao.maxPosition() + 1
-        return dao.insertTask(
+        val id = dao.insertTask(
             Task(title = title, position = position, active = true, createdAt = System.currentTimeMillis())
         )
+        onDataChanged()
+        return id
     }
 
     suspend fun updateTask(taskId: Long, title: String) {
         val current = dao.getTaskById(taskId) ?: return
         dao.updateTask(current.copy(title = title))
+        onDataChanged()
     }
 
     suspend fun deleteTask(taskId: Long) {
         dao.deleteTaskById(taskId) // completions removed via FK CASCADE
+        onDataChanged()
     }
 
     suspend fun toggleTask(taskId: Long) {
-        dao.toggleCompletion(taskId, today())
+        dao.toggleCompletion(taskId, ChecklistRepository.today())
+        onDataChanged()
     }
-
-    fun today(): String = LocalDate.now().toString()
 
     fun currentStreak(completions: List<DailyCompletion>, tasks: List<Task>, today: String): Int {
         val active = tasks.filter { it.active }
@@ -63,7 +68,7 @@ class ChecklistRepository(private val dao: TaskDao) {
     fun computeStats(
         completions: List<DailyCompletion>,
         tasks: List<Task>,
-        today: String = today()
+        today: String = ChecklistRepository.today()
     ): List<TaskStat> {
         val todayDate = LocalDate.parse(today)
         return tasks.map { task ->
@@ -95,5 +100,9 @@ class ChecklistRepository(private val dao: TaskDao) {
             val date = todayDate.minusDays((days - 1 - offset).toLong()).toString()
             DailyPoint(date, countByDate[date] ?: 0)
         }
+    }
+    
+    companion object {
+        fun today(): String = LocalDate.now().toString()
     }
 }

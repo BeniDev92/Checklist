@@ -3,6 +3,7 @@ package com.example.checklist.data
 import com.example.checklist.ui.TaskStat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate
@@ -182,10 +183,32 @@ class ChecklistRepositoryTest {
         assertEquals(2, series.last().count)
     }
 
+    // ---- onDataChanged ----
+
+    @Test
+    fun `mutaciones invocan onDataChanged`() = runBlocking {
+        val existing = task(1, LocalDate.of(2026, 9, 1))
+        var calls = 0
+        val dao = object : FakeTaskDao() {
+            override suspend fun getTaskById(taskId: Long): Task? = existing
+        }
+        val repo = ChecklistRepository(dao) { calls++ }
+
+        repo.addTask("nueva")
+        assertEquals(1, calls)
+        repo.updateTask(1, "renombrada")
+        assertEquals(2, calls)
+        repo.deleteTask(1)
+        assertEquals(3, calls)
+        repo.toggleTask(1)
+        assertEquals(4, calls)
+    }
+
     // ---- fake dao ----
 
-    private class FakeTaskDao : TaskDao {
+    private open class FakeTaskDao : TaskDao {
         override fun observeActiveTasks(): Flow<List<Task>> = emptyFlow()
+        override suspend fun getActiveTasks(): List<Task> = emptyList()
         override fun observeAllCompletions(): Flow<List<DailyCompletion>> = emptyFlow()
         override suspend fun maxPosition(): Int = 0
         override suspend fun insertTask(task: Task): Long = 0

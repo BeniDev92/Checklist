@@ -13,6 +13,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE active = 1 ORDER BY position ASC")
     fun observeActiveTasks(): Flow<List<Task>>
 
+    @Query("SELECT * FROM tasks WHERE active = 1 ORDER BY position ASC")
+    suspend fun getActiveTasks(): List<Task>
+
     @Query("SELECT COALESCE(MAX(position), 0) FROM tasks")
     suspend fun maxPosition(): Int
 
