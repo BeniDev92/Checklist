@@ -25,6 +25,9 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE id = :taskId")
     suspend fun deleteTaskById(taskId: Long)
 
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    suspend fun getTaskById(taskId: Long): Task?
+
     @Query("SELECT * FROM daily_completions WHERE task_id = :taskId AND date = :date")
     suspend fun getCompletion(taskId: Long, date: String): DailyCompletion?
 

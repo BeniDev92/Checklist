@@ -2,7 +2,6 @@ package com.example.checklist.data
 
 import com.example.checklist.ui.TaskStat
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -21,7 +20,7 @@ class ChecklistRepository(private val dao: TaskDao) {
     }
 
     suspend fun updateTask(taskId: Long, title: String) {
-        val current = dao.observeActiveTasks().first().firstOrNull { it.id == taskId } ?: return
+        val current = dao.getTaskById(taskId) ?: return
         dao.updateTask(current.copy(title = title))
     }
 

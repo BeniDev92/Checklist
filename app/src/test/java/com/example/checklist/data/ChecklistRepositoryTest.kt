@@ -137,6 +137,7 @@ class ChecklistRepositoryTest {
         override suspend fun insertTask(task: Task): Long = 0
         override suspend fun updateTask(task: Task) {}
         override suspend fun deleteTaskById(taskId: Long) {}
+        override suspend fun getTaskById(taskId: Long): Task? = null
         override suspend fun getCompletion(taskId: Long, date: String): DailyCompletion? = null
         override suspend fun upsertCompletion(completion: DailyCompletion) {}
         override suspend fun getCompletionsForDate(date: String): List<DailyCompletion> = emptyList()
