@@ -17,9 +17,22 @@ android {
         versionName = "1.0"
     }
 
+    val releaseKeystore = file(System.getenv("CHECKLIST_KEYSTORE") ?: "checklist-release.jks")
+
+    signingConfigs {
+        create("release") {
+            storeFile = releaseKeystore
+            storePassword = System.getenv("CHECKLIST_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("CHECKLIST_KEY_ALIAS") ?: "checklist"
+            keyPassword = System.getenv("CHECKLIST_KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Firma solo si existe el keystore; si no, build sin firmar (como antes).
+            signingConfig = if (releaseKeystore.exists()) signingConfigs.getByName("release") else null
         }
     }
     compileOptions {
