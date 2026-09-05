@@ -42,7 +42,7 @@ class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
 
     private val initialUiState = ChecklistUiState(
         tasks = emptyList(),
-        today = repo.today(),
+        today = ChecklistRepository.today(),
         totalTasks = 0,
         completedTasks = 0,
         progress = 0f,
@@ -57,7 +57,7 @@ class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
             repo.observeAllCompletions(),
             refreshTrigger
         ) { tasks, completions, _ ->
-            val today = repo.today()
+            val today = ChecklistRepository.today()
             val tasksUi = tasks.map { task ->
                 TaskUi(
                     id = task.id,
