@@ -15,8 +15,14 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -93,6 +99,31 @@ private val DarkColors = darkColorScheme(
     outline = Color(0xFF8C9387)
 )
 
+// Tipografía display redondeada y amigable (Baloo 2, variable; se usa en peso Bold).
+// Solo los estilos display/headline usan la fuente; el resto mantiene la Material3 por defecto.
+private val DisplayFont = FontFamily(Font(R.font.display_font, FontWeight.Bold))
+
+private val AppTypography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = DisplayFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 57.sp,
+        lineHeight = 64.sp
+    ),
+    displaySmall = TextStyle(
+        fontFamily = DisplayFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = DisplayFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp
+    )
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,6 +187,7 @@ private fun ChecklistTheme(content: @Composable () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography = AppTypography,
         content = content
     )
 }

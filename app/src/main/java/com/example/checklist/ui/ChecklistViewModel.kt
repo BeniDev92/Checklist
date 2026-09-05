@@ -38,6 +38,11 @@ data class TaskStat(
     val recent7Days: List<Boolean> = List(7) { false }
 )
 
+data class DailyPoint(
+    val date: String,
+    val count: Int
+)
+
 class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
 
     private val initialUiState = ChecklistUiState(
@@ -82,6 +87,11 @@ class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
     val stats: StateFlow<List<TaskStat>> =
         combine(repo.observeAllCompletions(), repo.observeActiveTasks(), refreshTrigger) { completions, tasks, _ ->
             repo.computeStats(completions, tasks)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val dailySeries: StateFlow<List<DailyPoint>> =
+        combine(repo.observeAllCompletions(), refreshTrigger) { completions, _ ->
+            repo.dailySeries(completions, repo.today())
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleTask(taskId: Long) {

@@ -150,6 +150,38 @@ class ChecklistRepositoryTest {
         assertEquals(List(7) { false }, s.recent7Days)
     }
 
+    // ---- dailySeries ----
+
+    @Test
+    fun `dailySeries 14 dias desde hoy rango correcto`() {
+        val series = repo.dailySeries(emptyList(), "2026-09-05")
+        assertEquals(14, series.size)
+        assertEquals("2026-08-23", series.first().date)
+        assertEquals("2026-09-05", series.last().date)
+    }
+
+    @Test
+    fun `dailySeries cuenta por dia y dias sin registros a 0`() {
+        val completions = listOf(
+            comp(1, "2026-09-05"), comp(2, "2026-09-05"),
+            comp(3, "2026-09-03")
+        )
+        val series = repo.dailySeries(completions, "2026-09-05")
+        assertEquals(2, series.last().count)            // 09-05
+        assertEquals(1, series[series.size - 3].count)  // 09-03
+        assertEquals(0, series.first().count)           // 08-23
+    }
+
+    @Test
+    fun `dailySeries duplicados mismo dia y tarea no inflan el count`() {
+        val completions = listOf(
+            comp(1, "2026-09-05"), comp(1, "2026-09-05"),
+            comp(2, "2026-09-05"), comp(2, "2026-09-05", completed = false)
+        )
+        val series = repo.dailySeries(completions, "2026-09-05")
+        assertEquals(2, series.last().count)
+    }
+
     // ---- fake dao ----
 
     private class FakeTaskDao : TaskDao {
