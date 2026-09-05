@@ -7,3 +7,8 @@
 /captures
 .externalNativeBuild
 .cxx
+
+# Release signing
+*.jks
+*.keystore
+*.p12

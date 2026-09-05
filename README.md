@@ -13,7 +13,7 @@ App Android nativa para gestionar una rutina diaria: checklist de tareas con cum
 ## Stack tecnológico
 
 - Kotlin + Jetpack Compose (Material 3).
-- Room 2.6.1 (SQLite) con KSP.
+- Room 2.7.x (SQLite) con KSP.
 - MVVM mínimo sin Hilt (ViewModel con factory manual).
 - Corrutinas y Flow.
 
@@ -43,6 +43,39 @@ Alternativa: abre el proyecto en Android Studio y pulsa **Run**.
 ```bash
 .\gradlew.bat testDebugUnitTest
 ```
+
+## Generar una release
+
+1. **Generar el keystore** (una sola vez):
+
+   ```bash
+   keytool -genkey -v -keystore app\checklist-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias checklist
+   ```
+
+   El keystore queda excluido del control de versiones (ya está en `.gitignore`). Guárdalo a salvo y no lo pierdas: es la única forma de firmar actualizaciones de la app.
+
+2. **Definir las variables de entorno** (PowerShell):
+
+   ```powershell
+   $env:CHECKLIST_STORE_PASSWORD = "tu_password"
+   $env:CHECKLIST_KEY_PASSWORD = "tu_password"
+   ```
+
+   Opcional: `$env:CHECKLIST_KEY_ALIAS = "checklist"` (default) y `$env:CHECKLIST_KEYSTORE` si el keystore no está en `app\checklist-release.jks`.
+
+3. **Subir el `versionCode`** (entero, debe subir en cada release) y ajustar el `versionName` en `app/build.gradle.kts` (`defaultConfig`).
+
+4. **Ejecutar el script**:
+
+   ```bash
+   .\release.bat
+   ```
+
+   O manualmente: `.\gradlew.bat bundleRelease assembleRelease`.
+
+5. **Artefactos generados**: AAB para Google Play (`app\build\outputs\bundle\release\app-release.aab`) y APK para instalar o distribuir (`app\build\outputs\apk\release\app-release.apk`).
+
+> Nota: si no existe el keystore, el build de release se genera sin firmar (no instalable en Android).
 
 ## Estructura del proyecto
 
@@ -75,8 +108,12 @@ app/src/test/java/com/example/checklist/data/
 - **Tasa de cumplimiento**: se calcula sobre los días con registro de esa tarea, no sobre días transcurridos.
 - **Borrado**: eliminar una tarea es permanente; sus `daily_completions` se borran con CASCADE.
 - **Reset diario**: el "hoy" se deriva de la fecha local (`LocalDate.now()`), sin cron ni borrado; se recalcula al abrir la app.
-- **JDK local (configuración previa)**: para ejecutar Gradle en local es necesario crear `local.properties` (NO versionado, en `.gitignore`) con la ruta del JDK de tu máquina, por ejemplo:
-  ```properties
-  org.gradle.java.home=C\:\\Program Files\\Android\\Android Studio\\jbr
+- **JDK para Gradle (línea de comandos)**: Gradle NO lee `local.properties` (eso solo lo usa el plugin de Android para `sdk.dir`). En línea de comandos usa la variable de entorno `JAVA_HOME`. Gradle 8.x requiere un JDK 17-21; Java 26+ falla al compilar los scripts `.kts` con `IllegalArgumentException: 26.0.1`. El JDK recomendado es el JBR 21 de Android Studio (`C:\Program Files\Android\Android Studio\jbr`). `release.bat` ya fija `JAVA_HOME` a ese JBR automáticamente cuando existe. Para builds manuales, defínelo antes, por ejemplo en PowerShell:
+  ```powershell
+  $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
   ```
-  Ajusta la ruta según tu instalación de JDK. En CI se usa el JDK 17 configurado por los workflows, así que no hace falta en el runner.
+  o en cmd:
+  ```bat
+  set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
+  ```
+  En CI se usa el JDK 17 configurado por los workflows, así que no hace falta en el runner.

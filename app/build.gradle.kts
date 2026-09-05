@@ -17,9 +17,22 @@ android {
         versionName = "1.0"
     }
 
+    val releaseKeystore = file(System.getenv("CHECKLIST_KEYSTORE") ?: "checklist-release.jks")
+
+    signingConfigs {
+        create("release") {
+            storeFile = releaseKeystore
+            storePassword = System.getenv("CHECKLIST_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("CHECKLIST_KEY_ALIAS") ?: "checklist"
+            keyPassword = System.getenv("CHECKLIST_KEY_PASSWORD") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Firma solo si existe el keystore; si no, build sin firmar (como antes).
+            signingConfig = if (releaseKeystore.exists()) signingConfigs.getByName("release") else null
         }
     }
     compileOptions {
@@ -35,10 +48,10 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
+    val composeBom = platform("androidx.compose:compose-bom:2025.05.01")
     implementation(composeBom)
 
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
@@ -50,9 +63,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
