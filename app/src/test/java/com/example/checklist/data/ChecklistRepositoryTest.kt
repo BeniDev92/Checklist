@@ -128,6 +128,28 @@ class ChecklistRepositoryTest {
         assertEquals(2, s.completedDays)
     }
 
+    @Test
+    fun `recent7Days hoy hace 5 dias y resto del rango`() {
+        val tasks = listOf(task(1, LocalDate.of(2026, 8, 1)))
+        val completions = listOf(
+            comp(1, "2026-08-31"), // hace 5 días -> índice 1
+            comp(1, "2026-09-05")  // hoy -> índice 6
+        )
+        val s = repo.computeStats(completions, tasks, today = "2026-09-05").single()
+        assertEquals(
+            listOf(false, true, false, false, false, false, true),
+            s.recent7Days
+        )
+    }
+
+    @Test
+    fun `completado fuera de los 7 dias no aparece en recent7Days`() {
+        val tasks = listOf(task(1, LocalDate.of(2026, 8, 1)))
+        val completions = listOf(comp(1, "2026-08-29")) // hace 7 días -> fuera de rango
+        val s = repo.computeStats(completions, tasks, today = "2026-09-05").single()
+        assertEquals(List(7) { false }, s.recent7Days)
+    }
+
     // ---- fake dao ----
 
     private class FakeTaskDao : TaskDao {

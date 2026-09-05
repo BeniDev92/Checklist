@@ -34,7 +34,8 @@ data class TaskStat(
     val title: String,
     val completedDays: Int,
     val trackedDays: Int,
-    val rate: Float
+    val rate: Float,
+    val recent7Days: List<Boolean> = List(7) { false }
 )
 
 class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
@@ -79,7 +80,7 @@ class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialUiState)
 
     val stats: StateFlow<List<TaskStat>> =
-        combine(repo.observeAllCompletions(), repo.observeActiveTasks()) { completions, tasks ->
+        combine(repo.observeAllCompletions(), repo.observeActiveTasks(), refreshTrigger) { completions, tasks, _ ->
             repo.computeStats(completions, tasks)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

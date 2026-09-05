@@ -59,12 +59,21 @@ class ChecklistRepository(private val dao: TaskDao) {
         return streak
     }
 
-    fun computeStats(completions: List<DailyCompletion>, tasks: List<Task>): List<TaskStat> =
-        tasks.map { task ->
+    fun computeStats(
+        completions: List<DailyCompletion>,
+        tasks: List<Task>,
+        today: String = today()
+    ): List<TaskStat> {
+        val todayDate = LocalDate.parse(today)
+        return tasks.map { task ->
             val taskCompletions = completions.filter { it.taskId == task.id }
             val trackedDays = taskCompletions.map { it.date }.distinct().size
             val completedDays = taskCompletions.filter { it.completed }.map { it.date }.distinct().size
             val rate = if (trackedDays == 0) 0f else completedDays.toFloat() / trackedDays
-            TaskStat(task.id, task.title, completedDays, trackedDays, rate)
+            val completedDates = taskCompletions.filter { it.completed }.map { it.date }.toSet()
+            // ponytail: index 0 = today-6, index 6 = today
+            val recent7Days = (0 until 7).map { todayDate.minusDays(6L - it).toString() in completedDates }
+            TaskStat(task.id, task.title, completedDays, trackedDays, rate, recent7Days)
         }
+    }
 }
