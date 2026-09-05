@@ -13,7 +13,7 @@ App Android nativa para gestionar una rutina diaria: checklist de tareas con cum
 ## Stack tecnológico
 
 - Kotlin + Jetpack Compose (Material 3).
-- Room 2.6.1 (SQLite) con KSP.
+- Room 2.7.x (SQLite) con KSP.
 - MVVM mínimo sin Hilt (ViewModel con factory manual).
 - Corrutinas y Flow.
 
