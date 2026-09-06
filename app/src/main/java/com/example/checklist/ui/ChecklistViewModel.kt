@@ -91,7 +91,7 @@ class ChecklistViewModel(private val repo: ChecklistRepository) : ViewModel() {
 
     val dailySeries: StateFlow<List<DailyPoint>> =
         combine(repo.observeAllCompletions(), refreshTrigger) { completions, _ ->
-            repo.dailySeries(completions, repo.today())
+            repo.dailySeries(completions, ChecklistRepository.today())
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleTask(taskId: Long) {
